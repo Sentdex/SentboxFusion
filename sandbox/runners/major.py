@@ -33,15 +33,31 @@ config = RunConfig.get_instance_sync()
 
 @cache
 def get_python_rt_env(env_name: str):
-    r = subprocess.run(f'bash -c "source {find_conda_root()}/bin/activate {env_name} && which python"',
-                       capture_output=True,
-                       text=True,
-                       check=True,
-                       shell=True)
-    python_path = os.path.dirname(r.stdout)
+    """Return env vars to ensure runner uses correct Python.
+
+    Tries to activate the requested Conda environment; if Conda is not
+    available (common in minimal dev setups) falls back to whatever `python`
+    is on the system `PATH`.
+    """
+
+    import shutil
+
+    conda_root = find_conda_root()
+    if conda_root:
+        cmd = f'bash -c "source {conda_root}/bin/activate {env_name} && which python"'
+        r = subprocess.run(cmd, capture_output=True, text=True, shell=True)
+        if r.returncode == 0:
+            python_dir = os.path.dirname(r.stdout.strip())
+        else:
+            logger.warning('Conda activation failed, falling back to system python', stderr=r.stderr)
+            python_dir = os.path.dirname(shutil.which('python') or '/usr/bin')
+    else:
+        logger.info('Conda root not found, using system python')
+        python_dir = os.path.dirname(shutil.which('python') or '/usr/bin')
+
     original_paths = os.environ.get('PATH', '').split(':')
     filtered_path = ':'.join([p for p in original_paths if '/envs/sandbox/' not in p])
-    return {'PATH': f'{python_path}:{filtered_path}'}
+    return {'PATH': f'{python_dir}:{filtered_path}'}
 
 
 __cpp_rt_flags = None

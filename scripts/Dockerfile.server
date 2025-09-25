@@ -1,4 +1,4 @@
-FROM vemlp-cn-beijing.cr.volces.com/preset-images/code-sandbox:base-20250609
+FROM code_sandbox:base
 
 COPY ./runtime/go ./runtime/go
 # download and cache go deps

@@ -25,6 +25,8 @@ CODE_RUNNERS = {
     **MAJOR_RUNNERS,
     **MINOR_RUNNERS,
     **GPU_RUNNERS,
+    # Alias combining Python image with bash available
+    'pybash': MAJOR_RUNNERS['python'],
 }
 
 __all__ = [

@@ -24,6 +24,7 @@ from fastapi.staticfiles import StaticFiles
 from sandbox.database import get_databases
 from sandbox.server.online_judge_api import oj_router
 from sandbox.server.sandbox_api import sandbox_router
+from sandbox.server.session_api import session_router
 from sandbox.utils.logging import configure_logging
 
 configure_logging()
@@ -44,10 +45,10 @@ app.mount('/playground',
           StaticFiles(directory=os.path.abspath(os.path.join(__file__, '../../pages')), html=True),
           name='playground')
 
-app = FastAPI(lifespan=lifespan)
-app.mount('/SandboxFusion',
-          StaticFiles(directory=os.path.abspath(os.path.join(__file__, '../../../docs/build')), html=True),
-          name='doc-site')
+# Mount docs only if build directory exists
+docs_dir = os.path.abspath(os.path.join(__file__, '../../../docs/build'))
+if os.path.isdir(docs_dir):
+    app.mount('/SandboxFusion', StaticFiles(directory=docs_dir, html=True), name='doc-site')
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -86,6 +87,7 @@ async def base_exception_handler(request: Request, exc: Exception):
 
 app.include_router(sandbox_router, tags=['sandbox'])
 app.include_router(oj_router, tags=['datasets'])
+app.include_router(session_router, tags=['sessions'])
 
 
 @app.get("/v1/ping")
